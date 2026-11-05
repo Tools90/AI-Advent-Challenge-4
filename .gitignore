@@ -1,0 +1,18 @@
+# Секреты и локальные данные — не коммитим
+
+.env.local
+api_key.txt
+*.key
+data/
+
+# Сборка
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Прочее
+.DS_Store
+Thumbs.db

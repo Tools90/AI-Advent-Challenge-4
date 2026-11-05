@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Temperature Lab · День 4</title>
+<style>
+  :root {
+    --bg: #f7f2ea;
+    --card: #fffdf9;
+    --ink: #1d2433;
+    --muted: #6b7487;
+    --line: #e6dfd3;
+    --line-2: #d8cfc0;
+    --blue: #2f6bff;
+    --violet: #8b5cf6;
+    --red: #ff5a3c;
+    --green: #138a5b;
+    --green-soft: #e6f6ee;
+    --red-soft: #ffece7;
+    --amber: #b45309;
+    --amber-soft: #fdf1df;
+    --shadow: 0 16px 44px rgba(80, 60, 40, .08);
+    --radius: 16px;
+    --mono: Consolas, "Courier New", monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+
+  html, body { height: 100%; margin: 0; }
+
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(900px 500px at 0% -10%, rgba(47, 107, 255, .10), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(255, 90, 60, .10), transparent 55%),
+      var(--bg);
+  }
+
+  button, input, textarea, select { font-family: inherit; }
+
+  .app { min-height: 100%; display: flex; flex-direction: column; }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 13px 20px;
+    background: rgba(255, 253, 249, .88);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .mark {
+    width: 40px; height: 40px; flex: 0 0 auto;
+    display: grid; place-items: center;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--blue), var(--violet) 50%, var(--red));
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .brand h1 { margin: 0; font-size: 16px; letter-spacing: .2px; }
+  .brand p { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+
+  .tabs { display: flex; gap: 4px; margin-left: 12px; }
+  .tab {
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    cursor: pointer;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: #fff; background: linear-gradient(135deg, var(--blue), var(--violet)); font-weight: 600; }
+
+  .topbar .spacer { flex: 1; }
+  .badge {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    border: 1px solid var(--line-2);
+    background: #fff;
+    border-radius: 999px;
+    padding: 5px 10px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .badge.off { color: var(--green); border-color: #bfe8d2; background: var(--green-soft); }
+
+  .view { flex: 1; display: flex; min-height: 0; }
+  .sidebar {
+    width: 380px;
+    flex: 0 0 auto;
+    padding: 16px;
+    border-right: 1px solid var(--line);
+    background: rgba(255, 253, 249, .55);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .block {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+  }
+
+  .block h3 {
+    margin: 0 0 9px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+
+  .field { margin-bottom: 10px; }
+  .field label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    color: var(--muted);
+  }
+
+  textarea, input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 9px 11px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line-2);
+    border-radius: 9px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  textarea { resize: vertical; min-height: 86px; }
+  textarea:focus, input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(139, 92, 246, .12); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+
+  .primary, .ghost {
+    border-radius: 9px;
+    cursor: pointer;
+    transition: .14s;
+  }
+
+  .primary {
+    padding: 11px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--blue), var(--violet) 55%, var(--red));
+    border: 0;
+  }
+  .primary:hover:not(:disabled) { filter: brightness(1.07); }
+  .primary:disabled { opacity: .5; cursor: default; }
+  .primary.big { width: 100%; padding: 12px; font-size: 14px; }
+
+  .ghost {
+    padding: 8px 11px;
+    font-size: 12px;
+    color: var(--muted);
+    background: #fff;
+    border: 1px solid var(--line-2);
+  }
+  .ghost:hover { color: var(--ink); border-color: var(--violet); }
+
+  .hint { margin: 6px 0 0; font-size: 10.5px; color: var(--muted); font-family: var(--mono); }
+
+  .temp-scale { display: flex; gap: 6px; margin-top: 6px; }
+  .temp-pill {
+    flex: 1;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 0;
+    border-radius: 8px;
+    color: #fff;
+  }
+  .temp-pill.t0 { background: var(--blue); }
+  .temp-pill.t07 { background: var(--violet); }
+  .temp-pill.t12 { background: var(--red); }
+
+  .experiment-list { display: flex; flex-direction: column; gap: 6px; }
+  .experiment-item {
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 11.5px;
+    color: var(--muted);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .experiment-item:hover, .experiment-item.active { border-color: var(--violet); color: var(--ink); }
+
+  .main { flex: 1; min-width: 0; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+
+  .empty {
+    margin: auto;
+    max-width: 520px;
+    padding: 42px 26px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13.5px;
+    border: 1.5px dashed var(--line-2);
+    border-radius: var(--radius);
+    background: rgba(255, 253, 249, .55);
+  }
+  .empty strong { display: block; color: var(--ink); font-size: 15px; margin-bottom: 6px; }
+
+  .progress-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+  }
+  .progress-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .progress-head strong { font-size: 14px; }
+  .progress-head span { font-size: 11.5px; color: var(--muted); font-family: var(--mono); }
+  .bar { height: 8px; border-radius: 99px; background: #efe9df; overflow: hidden; margin: 6px 0 8px; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--violet), var(--red)); transition: width .3s; }
+  .progress-line { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+  .error-box {
+    padding: 12px 14px;
+    border: 1px solid #f2b6aa;
+    background: var(--red-soft);
+    color: #a02716;
+    border-radius: 10px;
+    font-size: 12.5px;
+    white-space: pre-wrap;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  table { width: 100%; border-collapse: collapse; min-width: 820px; }
+  th, td { padding: 12px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--muted);
+    background: #faf6ef;
+    position: sticky;
+    top: 0;
+  }
+  tr:last-child td { border-bottom: 0; }
+  .row-title { font-size: 13px; font-weight: 700; }
+  .row-sub { margin-top: 3px; font-size: 11px; color: var(--muted); }
+  .cell { border-left: 3px solid transparent; }
+  .cell.t0 { border-left-color: var(--blue); }
+  .cell.t07 { border-left-color: var(--violet); }
+  .cell.t12 { border-left-color: var(--red); }
+  .score { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+  .score.good { color: var(--green); }
+  .score.bad { color: var(--red); }
+  .sub { margin-top: 4px; font-family: var(--mono); font-size: 10.5px; color: var(--muted); line-height: 1.5; }
+  .chip {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .chip.ok { color: var(--green); border-color: #bfe8d2; background: var(--green-soft); }
+  .chip.bad { color: var(--red); border-color: #f2b6aa; background: var(--red-soft); }
+  .chip.warn { color: var(--amber); border-color: #eed5ad; background: var(--amber-soft); }
+  .chip.t0 { color: #fff; border-color: var(--blue); background: var(--blue); }
+  .chip.t07 { color: #fff; border-color: var(--violet); background: var(--violet); }
+  .chip.t12 { color: #fff; border-color: var(--red); background: var(--red); }
+
+  .findings {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .findings::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--blue), var(--violet), var(--red));
+  }
+  .findings h3 { margin: 0 0 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .findings ul { margin: 0; padding-left: 18px; }
+  .findings li { font-size: 13px; line-height: 1.55; margin-bottom: 6px; }
+  .findings li:last-child { margin-bottom: 0; }
+
+  .resp-section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .resp-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    background: #faf6ef;
+  }
+  .resp-head h3 { margin: 0; font-size: 13.5px; }
+  .resp-head .spacer { flex: 1; }
+  .resp-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+  .run {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fff;
+  }
+  .run-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 7px; }
+  .run-no { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--violet); }
+  .run-meta { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+  .run-content {
+    font-size: 12.5px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-height: 220px;
+    overflow: auto;
+    color: #30394b;
+  }
+  .run-error {
+    font-size: 12px;
+    color: #a02716;
+    background: var(--red-soft);
+    border: 1px solid #f2b6aa;
+    border-radius: 8px;
+    padding: 8px 10px;
+    white-space: pre-wrap;
+  }
+  .extracted {
+    margin-top: 7px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .sandbox-results { display: flex; flex-direction: column; gap: 12px; }
+
+  .temp-slider-row { display: flex; align-items: center; gap: 10px; }
+  .temp-slider-row input[type="range"] { flex: 1; accent-color: var(--violet); }
+  .temp-value { font-family: var(--mono); font-size: 13px; font-weight: 700; min-width: 34px; text-align: right; }
+
+  @media (max-width: 980px) {
+    .view { flex-direction: column; }
+    .sidebar { width: 100%; border-right: 0; border-bottom: 1px solid var(--line); max-height: 52vh; }
+    .main { min-height: 48vh; }
+    .brand p { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">D4</div>
+      <div>
+        <h1>Temperature Lab</h1>
+        <p>AI Advent Challenge · День 4</p>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="experiment" type="button">Эксперимент</button>
+      <button class="tab" data-tab="sandbox" type="button">Песочница</button>
+    </nav>
+    <div class="spacer"></div>
+    <span class="badge off">thinking: disabled</span>
+    <span class="badge" id="modelBadge">deepseek-v4-flash</span>
+  </header>
+
+  <main class="view" id="view-experiment">
+    <aside class="sidebar">
+      <div class="block">
+        <h3>Промпты</h3>
+        <div class="field">
+          <label for="logicPrompt">Логическая задача</label>
+          <textarea id="logicPrompt" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label for="logicAnswer">Эталонный ответ (число)</label>
+          <input id="logicAnswer" type="number" value="7">
+          <p class="hint">Ответ в промпте — строго одно число.</p>
+        </div>
+        <div class="field">
+          <label for="generationPrompt">Генерация</label>
+          <textarea id="generationPrompt" rows="3"></textarea>
+          <p class="hint">Ответ — JSON-объект {"recipe":"..."}.</p>
+        </div>
+        <button class="ghost" id="savePrompts" type="button">Сохранить промпты</button>
+        <p class="hint">Сохраняется в prompts.json</p>
+      </div>
+
+      <div class="block">
+        <h3>Параметры</h3>
+        <div class="temp-scale">
+          <div class="temp-pill t0">0</div>
+          <div class="temp-pill t07">0.7</div>
+          <div class="temp-pill t12">1.2</div>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label for="runs">Прогонов на комбинацию</label>
+          <input id="runs" type="number" min="3" max="10" value="5">
+        </div>
+        <button class="primary big" id="runExperiment" type="button">Запустить эксперимент</button>
+        <p class="hint">2 типа × 3 температуры × N прогонов</p>
+      </div>
+
+      <div class="block">
+        <h3>Прошлые эксперименты</h3>
+        <div class="experiment-list" id="experimentList"></div>
+      </div>
+    </aside>
+
+    <section class="main">
+      <div class="empty" id="empty">
+        <strong>Готово к запуску</strong>
+        Запустите эксперимент: 2 типа задач × температуры 0 / 0.7 / 1.2 × N прогонов.
+      </div>
+
+      <div class="progress-card" id="progressCard" hidden>
+        <div class="progress-head">
+          <strong id="progressStatus">Выполняется</strong>
+          <span id="progressPhase"></span>
+        </div>
+        <div class="bar"><i id="progressBar" style="width:0%"></i></div>
+        <div class="progress-line"><span>Запросы</span><span id="progressCount">0 / 0</span></div>
+      </div>
+
+      <div class="error-box" id="errorBox" hidden></div>
+
+      <div id="result" hidden style="display:flex; flex-direction:column; gap:16px;">
+        <div class="table-wrap">
+          <table id="summaryTable"></table>
+        </div>
+        <div class="findings" id="findingsCard" hidden>
+          <h3>Что показал эксперимент</h3>
+          <ul id="findings"></ul>
+        </div>
+        <div id="responses" style="display:flex; flex-direction:column; gap:16px;"></div>
+      </div>
+    </section>
+  </main>
+
+  <main class="view" id="view-sandbox" hidden>
+    <aside class="sidebar">
+      <div class="block">
+        <h3>Свой промпт</h3>
+        <div class="field">
+          <label for="sandboxPrompt">Промпт</label>
+          <textarea id="sandboxPrompt" rows="6" placeholder="Напишите любой промпт…"></textarea>
+        </div>
+        <div class="field">
+          <label for="sandboxTemp">Температура</label>
+          <div class="temp-slider-row">
+            <input id="sandboxTemp" type="range" min="0" max="2" step="0.1" value="0.7">
+            <span class="temp-value" id="sandboxTempValue">0.7</span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="sandboxRuns">Прогонов</label>
+          <input id="sandboxRuns" type="number" min="1" max="5" value="1">
+        </div>
+        <button class="primary big" id="runSandbox" type="button">Отправить</button>
+        <p class="hint">Thinking отключён, температура работает.</p>
+      </div>
+    </aside>
+
+    <section class="main">
+      <div class="empty" id="sandboxEmpty">
+        <strong>Песочница</strong>
+        Отправьте свой промпт с выбранной температурой. Можно сделать 1–5 прогонов и сравнить ответы.
+      </div>
+      <div class="error-box" id="sandboxError" hidden></div>
+      <div class="sandbox-results" id="sandboxResults"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const state = {
+    presets: null,
+    prompts: null,
+    experiments: [],
+    experiment: null,
+    pollTimer: null,
+    sandboxBusy: false
+  };
+
+  const $ = (id) => document.getElementById(id);
+
+  function h(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[ch]));
+  }
+
+  function fmtMs(ms) {
+    if (ms == null || isNaN(ms)) return "—";
+    return ms >= 1000 ? (ms / 1000).toFixed(1) + " с" : Math.round(ms) + " мс";
+  }
+
+  function fmtTokens(n) {
+    if (n == null || isNaN(n)) return "—";
+    n = Math.round(n);
+    return n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n);
+  }
+
+  function fmtTemp(t) {
+    return Number(t) === 0 ? "0" : String(t);
+  }
+
+  function tempClass(t) {
+    if (Number(t) === 0) return "t0";
+    if (Number(t) === 0.7) return "t07";
+    return "t12";
+  }
+
+  function taskTitle(type) {
+    return type === "logic" ? "Логическая задача" : "Генерация идей";
+  }
+
+  function showError(message, sandbox) {
+    const box = sandbox ? $("sandboxError") : $("errorBox");
+    box.hidden = false;
+    box.textContent = message;
+  }
+
+  function hideError(sandbox) {
+    const box = sandbox ? $("sandboxError") : $("errorBox");
+    box.hidden = true;
+    box.textContent = "";
+  }
+
+  async function api(path, options) {
+    const res = await fetch(path, options);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+    return data;
+  }
+
+  async function init() {
+    try {
+      const [presets, prompts, experiments] = await Promise.all([
+        api("/api/presets"),
+        api("/api/prompts"),
+        api("/api/experiments")
+      ]);
+      state.presets = presets;
+      state.prompts = prompts;
+      state.experiments = experiments || [];
+
+      if (presets.model) $("modelBadge").textContent = presets.model;
+      fillPrompts(prompts);
+      $("runs").value = presets.defaultRuns || 5;
+      renderExperimentList();
+
+      if (state.experiments.length > 0) {
+        state.experiment = state.experiments[0];
+        renderExperiment();
+        if (state.experiment.status === "running") startPolling(state.experiment.id);
+      }
+    } catch (err) {
+      showError(err.message);
+    }
+  }
+
+  function fillPrompts(p) {
+    $("logicPrompt").value = p.logicPrompt || "";
+    $("logicAnswer").value = p.logicAnswer ?? 7;
+    $("generationPrompt").value = p.generationPrompt || "";
+  }
+
+  function currentPrompts() {
+    return {
+      logicPrompt: $("logicPrompt").value.trim(),
+      logicAnswer: Number($("logicAnswer").value),
+      generationPrompt: $("generationPrompt").value.trim()
+    };
+  }
+
+  async function savePrompts() {
+    try {
+      const saved = await api("/api/prompts", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(currentPrompts())
+      });
+      state.prompts = saved;
+      fillPrompts(saved);
+    } catch (err) {
+      showError(err.message);
+    }
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === name));
+    $("view-experiment").hidden = name !== "experiment";
+    $("view-sandbox").hidden = name !== "sandbox";
+  }
+
+  async function loadExperiments() {
+    state.experiments = await api("/api/experiments");
+    renderExperimentList();
+  }
+
+  function renderExperimentList() {
+    const list = $("experimentList");
+    if (state.experiments.length === 0) {
+      list.innerHTML = '<div class="hint">Пока нет.</div>';
+      return;
+    }
+    list.innerHTML = state.experiments.map((e) => `
+      <button class="experiment-item ${state.experiment && state.experiment.id === e.id ? "active" : ""}" data-id="${h(e.id)}" type="button">
+        ${h(new Date(e.createdAt).toLocaleString())} · ${h(e.status)} · ${e.runs} прогонов
+      </button>
+    `).join("");
+  }
+
+  async function runExperiment() {
+    hideError();
+    const prompts = currentPrompts();
+    if (!prompts.logicPrompt || !prompts.generationPrompt) {
+      showError("Заполните оба промпта.");
+      return;
+    }
+    const runs = Number($("runs").value);
+    if (runs < 3 || runs > 10) {
+      showError("Число прогонов: от 3 до 10.");
+      return;
+    }
+
+    $("runExperiment").disabled = true;
+    try {
+      const e = await api("/api/experiments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runs, prompts })
+      });
+      state.experiment = e;
+      $("empty").hidden = true;
+      renderExperiment();
+      startPolling(e.id);
+      await loadExperiments();
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      $("runExperiment").disabled = false;
+    }
+  }
+
+  function stopPolling() {
+    if (state.pollTimer) {
+      clearInterval(state.pollTimer);
+      state.pollTimer = null;
+    }
+  }
+
+  function startPolling(id) {
+    stopPolling();
+    state.pollTimer = setInterval(async () => {
+      try {
+        const e = await api("/api/experiments/" + encodeURIComponent(id));
+        state.experiment = e;
+        renderExperiment();
+        if (e.status === "done" || e.status === "error") {
+          stopPolling();
+          await loadExperiments();
+        }
+      } catch (err) {
+        stopPolling();
+        showError(err.message);
+      }
+    }, 1000);
+  }
+
+  function cellFor(e, taskType, temperature) {
+    return (e.cells || []).find((c) => c.taskType === taskType && Number(c.temperature) === Number(temperature));
+  }
+
+  function renderExperiment() {
+    const e = state.experiment;
+    if (!e) return;
+
+    $("empty").hidden = true;
+    $("result").hidden = false;
+    $("progressCard").hidden = false;
+
+    const p = e.progress || {};
+    const pct = p.total ? Math.round((p.completed / p.total) * 100) : 0;
+    const statusText = e.status === "running" ? "Выполняется" : e.status === "error" ? "Ошибка" : "Готово";
+
+    $("progressStatus").textContent = statusText;
+    $("progressPhase").textContent = e.status === "running" ? (p.phase || "") : "";
+    $("progressBar").style.width = pct + "%";
+    $("progressCount").textContent = (p.completed || 0) + " / " + (p.total || 0);
+
+    if (e.error) showError(e.error);
+
+    renderTable(e);
+    renderFindings(e);
+    renderResponses(e);
+  }
+
+  function renderTable(e) {
+    const temps = state.presets.temperatures || [0, 0.7, 1.2];
+    let html = "<thead><tr><th>Тип задачи</th>";
+    for (const temp of temps) html += `<th><span class="chip ${tempClass(temp)}" style="color:#fff;border:0;">${fmtTemp(temp)}</span></th>`;
+    html += "</tr></thead><tbody>";
+
+    for (const type of ["logic", "generation"]) {
+      html += `<tr><td><div class="row-title">${h(taskTitle(type))}</div><div class="row-sub">${type === "logic" ? "один правильный ответ" : "свободная генерация"}</div></td>`;
+      for (const temp of temps) {
+        const c = cellFor(e, type, temp) || { runs: 0, correct: 0, formatValid: 0, unique: 0, avgSimilarity: 0, avgTokens: 0, avgLatencyMs: 0, errors: 0 };
+        const score = type === "logic" ? `${c.correct}/${c.runs}` : `${c.formatValid}/${c.runs}`;
+        const scoreClass = type === "logic"
+          ? (c.correct === c.runs && c.runs > 0 ? "good" : (c.correct === 0 && c.runs > 0 ? "bad" : ""))
+          : (c.formatValid === c.runs && c.runs > 0 ? "good" : (c.formatValid === 0 && c.runs > 0 ? "bad" : ""));
+
+        html += `<td class="cell ${tempClass(temp)}">
+          <div class="score ${scoreClass}">${type === "logic" ? "✓ " : "формат "}${score}</div>
+          <div class="sub">${type === "logic" ? `формат ${c.formatValid}/${c.runs} · ` : ""}уникальных ${c.unique}/${c.runs}</div>
+          <div class="sub">похожесть ${Number(c.avgSimilarity || 0).toFixed(2)} · ср. ${fmtMs(c.avgLatencyMs)} · ${fmtTokens(c.avgTokens)} ток.</div>
+          ${c.errors ? `<span class="chip bad">ошибок ${c.errors}</span>` : ""}
+        </td>`;
+      }
+      html += "</tr>";
+    }
+    html += "</tbody>";
+    $("summaryTable").innerHTML = html;
+  }
+
+  function renderFindings(e) {
+    const done = e.status === "done";
+    $("findingsCard").hidden = !done;
+    if (!done) {
+      $("findings").innerHTML = "";
+      return;
+    }
+    $("findings").innerHTML = (e.findings || []).map((text) => `<li>${h(text)}</li>`).join("");
+  }
+
+  function renderResponses(e) {
+    const temps = state.presets.temperatures || [0, 0.7, 1.2];
+    const sections = [];
+
+    for (const type of ["logic", "generation"]) {
+      for (const temp of temps) {
+        const runs = (e.results || [])
+          .filter((r) => r.taskType === type && Number(r.temperature) === Number(temp))
+          .sort((a, b) => a.index - b.index);
+        if (runs.length === 0) continue;
+
+        const cards = runs.map((r) => {
+          const chips = [];
+          if (r.error) {
+            chips.push('<span class="chip bad">ошибка API</span>');
+          } else {
+            chips.push(`<span class="chip ${r.formatValid ? "ok" : "bad"}">формат ${r.formatValid ? "✓" : "✗"}</span>`);
+            if (type === "logic") {
+              chips.push(`<span class="chip ${r.correct ? "ok" : "bad"}">${r.correct ? "верно" : "неверно"}</span>`);
+            }
+          }
+          const extracted = r.extracted
+            ? `<div class="extracted">${type === "logic" ? "извлечённый ответ" : "recipe"}: ${h(r.extracted)}</div>`
+            : "";
+          const body = r.error
+            ? `<div class="run-error">${h(r.error)}</div>`
+            : `<div class="run-content">${h(r.content || "∅")}</div>`;
+          return `<div class="run">
+            <div class="run-head">
+              <span class="run-no">#${r.index}</span>
+              ${chips.join("")}
+              <span class="run-meta">${fmtTokens(r.usage?.total_tokens || 0)} ток. · ${fmtMs(r.latencyMs)}</span>
+            </div>
+            ${body}
+            ${extracted}
+          </div>`;
+        }).join("");
+
+        sections.push(`<section class="resp-section">
+          <div class="resp-head">
+            <h3>${h(taskTitle(type))}</h3>
+            <span class="chip ${tempClass(temp)}" style="color:#fff;border:0;">temperature=${fmtTemp(temp)}</span>
+            <div class="spacer"></div>
+            <span class="hint" style="margin:0;">${runs.length} прогонов</span>
+          </div>
+          <div class="resp-body">${cards}</div>
+        </section>`);
+      }
+    }
+
+    $("responses").innerHTML = sections.join("");
+  }
+
+  async function runSandbox() {
+    if (state.sandboxBusy) return;
+    hideError(true);
+    const prompt = $("sandboxPrompt").value.trim();
+    if (!prompt) {
+      showError("Введите промпт.", true);
+      return;
+    }
+    const temperature = Number($("sandboxTemp").value);
+    const runs = Number($("sandboxRuns").value);
+    if (runs < 1 || runs > 5) {
+      showError("Число прогонов: от 1 до 5.", true);
+      return;
+    }
+
+    state.sandboxBusy = true;
+    $("runSandbox").disabled = true;
+    $("sandboxEmpty").hidden = true;
+    $("sandboxResults").innerHTML = '<div class="hint">Выполняю…</div>';
+
+    try {
+      const data = await api("/api/sandbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, temperature, runs })
+      });
+      renderSandbox(data);
+    } catch (err) {
+      showError(err.message, true);
+      $("sandboxResults").innerHTML = "";
+    } finally {
+      state.sandboxBusy = false;
+      $("runSandbox").disabled = false;
+    }
+  }
+
+  function renderSandbox(data) {
+    const cards = (data.results || []).map((r) => {
+      const body = r.error
+        ? `<div class="run-error">${h(r.error)}</div>`
+        : `<div class="run-content">${h(r.content || "∅")}</div>`;
+      return `<div class="run">
+        <div class="run-head">
+          <span class="run-no">#${r.index}</span>
+          <span class="run-meta">${fmtTokens(r.usage?.total_tokens || 0)} ток. · ${fmtMs(r.latencyMs)}</span>
+        </div>
+        ${body}
+      </div>`;
+    }).join("");
+
+    $("sandboxResults").innerHTML = `<section class="resp-section">
+      <div class="resp-head">
+        <h3>Песочница</h3>
+        <span class="chip ${tempClass(data.temperature)}" style="color:#fff;border:0;">temperature=${fmtTemp(data.temperature)}</span>
+        <div class="spacer"></div>
+        <span class="hint" style="margin:0;">${data.runs} прогонов</span>
+      </div>
+      <div class="resp-body">${cards}</div>
+    </section>`;
+  }
+
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => switchTab(tab.dataset.tab));
+  });
+
+  $("savePrompts").addEventListener("click", savePrompts);
+  $("runExperiment").addEventListener("click", runExperiment);
+  $("runSandbox").addEventListener("click", runSandbox);
+
+  $("sandboxTemp").addEventListener("input", () => {
+    $("sandboxTempValue").textContent = Number($("sandboxTemp").value).toFixed(1);
+  });
+
+  $("experimentList").addEventListener("click", async (e) => {
+    const item = e.target.closest(".experiment-item");
+    if (!item) return;
+    stopPolling();
+    try {
+      state.experiment = await api("/api/experiments/" + encodeURIComponent(item.dataset.id));
+      renderExperiment();
+      renderExperimentList();
+      if (state.experiment.status === "running") startPolling(state.experiment.id);
+    } catch (err) {
+      showError(err.message);
+    }
+  });
+
+  init();
+</script>
+</body>
+</html>
